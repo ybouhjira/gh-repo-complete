@@ -6,11 +6,23 @@ typeset -g GH_REPO_CACHE_FILE="${XDG_CACHE_HOME:-$HOME/.cache}/gh-repos-cache"
 typeset -g GH_REPO_CACHE_TTL=300  # 5 minutes - when to background refresh
 typeset -g GH_REPO_CACHE_STALE=3600  # 1 hour - max age before blocking refresh
 
+# Cross-platform file mtime (macOS vs Linux)
+_gh_file_mtime() {
+  local file="$1"
+  if [[ "$OSTYPE" == darwin* ]]; then
+    stat -f %m "$file" 2>/dev/null || echo 0
+  else
+    stat -c %Y "$file" 2>/dev/null || echo 0
+  fi
+}
+
 # Prefetch repos in background on shell start
 _gh_prefetch_repos() {
   # Only prefetch if cache is stale or missing
-  if [[ ! -f "$GH_REPO_CACHE_FILE" ]] || \
-     (( $(date +%s) - $(stat -f %m "$GH_REPO_CACHE_FILE" 2>/dev/null || echo 0) > GH_REPO_CACHE_TTL )); then
+  local cache_mtime=0
+  [[ -f "$GH_REPO_CACHE_FILE" ]] && cache_mtime=$(_gh_file_mtime "$GH_REPO_CACHE_FILE")
+
+  if [[ ! -f "$GH_REPO_CACHE_FILE" ]] || (( $(date +%s) - cache_mtime > GH_REPO_CACHE_TTL )); then
     # Background fetch - silent, non-blocking
     {
       local repos
@@ -38,7 +50,7 @@ _gh_get_repos() {
   local cache_time=0
 
   if [[ -f "$cache_file" ]]; then
-    cache_time=$(stat -f %m "$cache_file" 2>/dev/null || stat -c %Y "$cache_file" 2>/dev/null || echo 0)
+    cache_time=$(_gh_file_mtime "$cache_file")
 
     # If cache exists and not completely stale, use it
     if (( now - cache_time < GH_REPO_CACHE_STALE )); then
