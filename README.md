@@ -26,6 +26,12 @@
 
 ---
 
+<p align="center">
+  <img src="demo.gif" alt="gh-repo-complete demo" width="700"/>
+</p>
+
+---
+
 ## The Problem
 
 Ever typed `gh repo clone` and wished it would autocomplete your repository names? The default GitHub CLI doesn't fetch your repos for tab completion—you have to remember and type the full name.
