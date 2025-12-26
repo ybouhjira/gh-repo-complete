@@ -1,58 +1,44 @@
-# VHS Demo for gh-repo-complete
+# VHS Demo - gh-repo-complete usage
 Output demo.gif
 
 Set Shell "zsh"
-Set FontSize 22
-Set Width 800
-Set Height 450
+Set FontSize 24
+Set Width 700
+Set Height 300
 Set Theme "Catppuccin Mocha"
-Set Padding 25
-Set TypingSpeed 80ms
+Set Padding 20
+Set TypingSpeed 100ms
 
 Sleep 500ms
-
-# Show the problem
-Type "# The problem: typing full repo names 😫"
-Enter
-Sleep 1s
-
-Type "gh repo clone ybouhjira/what-was-it-called"
-Sleep 1.5s
-Ctrl+U
-Sleep 500ms
-
-# Show the solution
-Type "# The solution: gh-repo-complete ⚡"
-Enter
-Sleep 1s
 
 Type "gh repo clone "
-Sleep 500ms
+Sleep 600ms
 
-# Simulate pressing Tab
-Type "[TAB]"
-Sleep 1s
-Backspace 5
+# Show TAB press
+Type "⇥"
+Sleep 800ms
+Backspace 1
 
+# Show autocomplete results
 Enter
-Sleep 300ms
-
-# Show fake autocomplete menu
 Type "  ybouhjira/dotfiles"
 Enter
 Type "  ybouhjira/gh-repo-complete"
 Enter
-Type "  ybouhjira/my-awesome-project"
+Type "  ybouhjira/my-project"
 Enter
-Type "  ybouhjira/terminal-tools"
-Sleep 2s
+Type "  ybouhjira/awesome-cli"
+Sleep 1.5s
 
-Ctrl+U
+# Select one
+Hide
+Ctrl+C
 Type "clear"
 Enter
-Sleep 300ms
+Show
+Sleep 200ms
 
-# Final message
-Type "# Prefetched on shell start = instant! 🚀"
+Type "gh repo clone ybouhjira/gh-repo-complete"
+Sleep 800ms
 Enter
-Sleep 2s
+Sleep 1.5s
