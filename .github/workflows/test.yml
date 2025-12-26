@@ -1,0 +1,170 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install zsh (Ubuntu)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y zsh
+
+      - name: Install oh-my-zsh
+        run: |
+          sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+        env:
+          SHELL: /bin/zsh
+
+      - name: Install GitHub CLI (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update && sudo apt install gh -y
+
+      - name: Install GitHub CLI (macOS)
+        if: runner.os == 'macOS'
+        run: brew install gh
+
+      - name: Install plugin
+        run: |
+          mkdir -p ~/.oh-my-zsh/custom/plugins/gh-repo-complete
+          cp gh-repo-complete.plugin.zsh ~/.oh-my-zsh/custom/plugins/gh-repo-complete/
+
+      - name: Test - Plugin loads without errors
+        run: |
+          zsh -c '
+            source ~/.oh-my-zsh/oh-my-zsh.sh
+            source ~/.oh-my-zsh/custom/plugins/gh-repo-complete/gh-repo-complete.plugin.zsh
+            echo "✅ Plugin loaded successfully"
+          '
+        shell: bash
+
+      - name: Test - Functions are defined
+        run: |
+          zsh -c '
+            source ~/.oh-my-zsh/oh-my-zsh.sh
+            source ~/.oh-my-zsh/custom/plugins/gh-repo-complete/gh-repo-complete.plugin.zsh
+
+            # Check functions exist
+            if (( $+functions[_gh_prefetch_repos] )); then
+              echo "✅ _gh_prefetch_repos defined"
+            else
+              echo "❌ _gh_prefetch_repos not defined"
+              exit 1
+            fi
+
+            if (( $+functions[_gh_get_repos] )); then
+              echo "✅ _gh_get_repos defined"
+            else
+              echo "❌ _gh_get_repos not defined"
+              exit 1
+            fi
+
+            if (( $+functions[_gh_repo_complete_init] )); then
+              echo "✅ _gh_repo_complete_init defined"
+            else
+              echo "❌ _gh_repo_complete_init not defined"
+              exit 1
+            fi
+          '
+        shell: bash
+
+      - name: Test - Cache file creation
+        run: |
+          zsh -c '
+            source ~/.oh-my-zsh/oh-my-zsh.sh
+            source ~/.oh-my-zsh/custom/plugins/gh-repo-complete/gh-repo-complete.plugin.zsh
+
+            # Create mock cache
+            mkdir -p ~/.cache
+            echo "test/repo1
+            test/repo2
+            test/repo3" > ~/.cache/gh-repos-cache
+
+            # Test reading cache
+            repos=$(_gh_get_repos)
+            if [[ "$repos" == *"test/repo1"* ]]; then
+              echo "✅ Cache reading works"
+            else
+              echo "❌ Cache reading failed"
+              exit 1
+            fi
+          '
+        shell: bash
+
+      - name: Test - Cache TTL logic
+        run: |
+          zsh -c '
+            source ~/.oh-my-zsh/oh-my-zsh.sh
+            source ~/.oh-my-zsh/custom/plugins/gh-repo-complete/gh-repo-complete.plugin.zsh
+
+            # Create fresh cache
+            mkdir -p ~/.cache
+            echo "cached/repo" > ~/.cache/gh-repos-cache
+
+            # Should return cached value (fresh cache)
+            result=$(_gh_get_repos)
+            if [[ "$result" == *"cached/repo"* ]]; then
+              echo "✅ Fresh cache returned correctly"
+            else
+              echo "❌ Fresh cache not returned"
+              exit 1
+            fi
+          '
+        shell: bash
+
+      - name: Test - Environment variables
+        run: |
+          zsh -c '
+            source ~/.oh-my-zsh/oh-my-zsh.sh
+            source ~/.oh-my-zsh/custom/plugins/gh-repo-complete/gh-repo-complete.plugin.zsh
+
+            if [[ -n "$GH_REPO_CACHE_FILE" ]]; then
+              echo "✅ GH_REPO_CACHE_FILE set: $GH_REPO_CACHE_FILE"
+            else
+              echo "❌ GH_REPO_CACHE_FILE not set"
+              exit 1
+            fi
+
+            if [[ "$GH_REPO_CACHE_TTL" -eq 300 ]]; then
+              echo "✅ GH_REPO_CACHE_TTL default: 300"
+            else
+              echo "❌ GH_REPO_CACHE_TTL incorrect: $GH_REPO_CACHE_TTL"
+              exit 1
+            fi
+
+            if [[ "$GH_REPO_CACHE_STALE" -eq 3600 ]]; then
+              echo "✅ GH_REPO_CACHE_STALE default: 3600"
+            else
+              echo "❌ GH_REPO_CACHE_STALE incorrect: $GH_REPO_CACHE_STALE"
+              exit 1
+            fi
+          '
+        shell: bash
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: '.'
+          format: tty
+          severity: warning
+        continue-on-error: true
