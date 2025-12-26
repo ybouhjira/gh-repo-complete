@@ -17,6 +17,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/ybouhjira/gh-repo-complete/actions/workflows/test.yml"><img src="https://github.com/ybouhjira/gh-repo-complete/actions/workflows/test.yml/badge.svg" alt="E2E Tests"/></a>
   <img src="https://img.shields.io/badge/oh--my--zsh-plugin-blue?style=flat-square&logo=gnu-bash" alt="oh-my-zsh plugin"/>
   <img src="https://img.shields.io/badge/shell-zsh-green?style=flat-square&logo=zsh" alt="zsh"/>
   <img src="https://img.shields.io/badge/GitHub%20CLI-required-black?style=flat-square&logo=github" alt="GitHub CLI"/>
