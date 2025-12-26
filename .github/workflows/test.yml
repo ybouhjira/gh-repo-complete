@@ -101,9 +101,7 @@ jobs:
 
             # Create mock cache
             mkdir -p ~/.cache
-            echo "test/repo1
-test/repo2
-test/repo3" > ~/.cache/gh-repos-cache
+            printf "test/repo1\ntest/repo2\ntest/repo3" > ~/.cache/gh-repos-cache
 
             # Test reading cache
             repos=$(_gh_get_repos)
